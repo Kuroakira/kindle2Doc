@@ -1,0 +1,23 @@
+# Virtual Environment
+venv/
+__pycache__/
+*.pyc
+
+# Credentials
+credentials/
+token.json
+
+# Output files
+output/
+*.png
+*.jpg
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+
