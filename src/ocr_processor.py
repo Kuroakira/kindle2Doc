@@ -19,6 +19,45 @@ class OCRProcessor:
         self.lang = lang
         self.cached_ocr_results: Optional[Dict[str, str]] = None
 
+    def clean_japanese_spaces(self, text: str) -> str:
+        """
+        日本語テキストから不要なスペースと改行を除去
+        - 全てのスペースを削除
+        - 改行2回連続（段落区切り）は保持
+        - 句読点後の改行は保持
+        - それ以外の単独改行は削除
+
+        Args:
+            text: クリーニング対象のテキスト
+
+        Returns:
+            クリーニング後のテキスト
+        """
+        if not text:
+            return text
+
+        # 1. スペースを除去
+        text = text.replace(' ', '')
+
+        # 2. 改行の処理
+        # 連続する改行（段落区切り）を一時的に保護
+        text = text.replace('\n\n', '<<PARAGRAPH>>')
+
+        # 句読点後の改行を保護
+        # 日本語の句読点リスト
+        punctuation_marks = ['。', '、', '！', '？', '」', '』', '）', ')', '…', '．', '，']
+        for punct in punctuation_marks:
+            text = text.replace(f'{punct}\n', f'{punct}<<SENTENCE>>')
+
+        # 残りの単独改行を削除
+        text = text.replace('\n', '')
+
+        # 保護したマーカーを元に戻す
+        text = text.replace('<<PARAGRAPH>>', '\n\n')
+        text = text.replace('<<SENTENCE>>', '\n')
+
+        return text
+
     def load_cached_ocr_results(self, ocr_results_file: Path) -> bool:
         """
         キャプチャ時に保存されたOCR結果を読み込む
@@ -53,6 +92,9 @@ class OCRProcessor:
         if self.cached_ocr_results:
             cached_text = self.cached_ocr_results.get(str(image_path))
             if cached_text is not None:
+                # 日本語モードの場合、キャッシュされたテキストもクリーニング
+                if self.lang == 'jpn':
+                    return self.clean_japanese_spaces(cached_text)
                 return cached_text
 
         # キャッシュがない場合はOCR実行
@@ -62,8 +104,13 @@ class OCRProcessor:
 
             # OCR実行
             text = pytesseract.image_to_string(image, lang=self.lang)
+            text = text.strip()
 
-            return text.strip()
+            # 日本語モードの場合、不要なスペースを除去
+            if self.lang == 'jpn':
+                text = self.clean_japanese_spaces(text)
+
+            return text
 
         except Exception as e:
             print(f"⚠ Error processing {image_path}: {e}")
