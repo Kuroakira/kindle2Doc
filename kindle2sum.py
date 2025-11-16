@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Kindle2MD - Kindleアプリを自動キャプチャしてGoogle Docsにアップロード
+Kindle2Sum - Kindleアプリを自動キャプチャしてページ要約を生成
 
 Usage:
-    python kindle2md.py --title "Book Title" [options]
+    python kindle2sum.py --title "Book Title" [options]
 """
 import argparse
 import sys
@@ -13,14 +13,14 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
 from kindle_capture import KindleCapture
-from ocr_processor import OCRProcessor
+from summarizer import Summarizer
 from google_docs_uploader import GoogleDocsUploader
 
 
 def main():
     """メイン処理"""
     parser = argparse.ArgumentParser(
-        description='Kindle2MD - Kindleアプリを自動キャプチャしてGoogle Docsにアップロード'
+        description='Kindle2Sum - Kindleアプリを自動キャプチャしてページ要約を生成'
     )
     parser.add_argument(
         '--title',
@@ -53,19 +53,19 @@ def main():
         help='OCR言語（jpn=日本語, eng=英語）（デフォルト: jpn）'
     )
     parser.add_argument(
-        '--no-page-separators',
-        action='store_true',
-        help='Markdownにページ区切りを追加しない'
-    )
-    parser.add_argument(
         '--keep-images',
         action='store_true',
         help='キャプチャ画像を削除せずに保持'
     )
     parser.add_argument(
-        '--save-markdown',
+        '--save-summary',
         type=str,
-        help='Markdownファイルを指定パスに保存（Google Docsへのアップロードなし）'
+        help='要約Markdownファイルを指定パスに保存'
+    )
+    parser.add_argument(
+        '--upload-to-docs',
+        action='store_true',
+        help='要約をGoogle Docsにもアップロード'
     )
     parser.add_argument(
         '--no-auto-focus',
@@ -96,16 +96,22 @@ def main():
         action='store_true',
         help='最終ページ自動検出を無効化（max-pagesまでキャプチャ）'
     )
+    parser.add_argument(
+        '--gemini-model',
+        type=str,
+        default='gemini-1.5-flash',
+        help='使用するGeminiモデル（デフォルト: gemini-1.5-flash）'
+    )
 
     args = parser.parse_args()
 
     try:
         print("=" * 60)
-        print("  Kindle2MD - Kindle to Google Docs Converter")
+        print("  Kindle2Sum - Kindle to Summary Generator")
         print("=" * 60)
 
         # ステップ1: Kindleキャプチャ
-        print("\n[Step 1/3] Capturing Kindle pages...")
+        print("\n[Step 1/4] Capturing Kindle pages...")
         capturer = KindleCapture(
             output_dir=args.output_dir,
             delay=args.delay,
@@ -122,52 +128,43 @@ def main():
             print("⚠ No pages captured. Exiting.")
             return
 
-        # ステップ2: OCR処理
-        print("\n[Step 2/3] Processing OCR and converting to Markdown...")
-        processor = OCRProcessor(lang=args.lang)
+        # ステップ2: 要約生成（Gemini Visionで画像から直接）
+        print("\n[Step 2/3] Generating summaries with Gemini Vision API...")
+        summarizer = Summarizer(model_name=args.gemini_model)
 
-        markdown_output = Path(args.output_dir) / "output.md"
-        markdown_text = processor.process_and_save(
+        summary_output = Path(args.output_dir) / "summary.md"
+        summary_text = summarizer.process_and_save(
             image_paths,
-            markdown_output,
-            title=args.title,
-            add_page_separators=not args.no_page_separators,
-            ocr_cache_dir=Path(args.output_dir)
+            summary_output,
+            title=args.title
         )
 
-        # Markdownファイルを保存して終了する場合
-        if args.save_markdown:
-            save_path = Path(args.save_markdown)
-            processor.save_markdown(markdown_text, save_path)
-            print(f"\n✓ Markdown saved to: {save_path}")
+        # 指定パスに保存
+        if args.save_summary:
+            save_path = Path(args.save_summary)
+            summarizer.save_summary_markdown(summary_text, save_path)
+            print(f"\n✓ Summary saved to: {save_path}")
 
-            # クリーンアップ
-            if not args.keep_images:
-                capturer.cleanup()
-                markdown_output.unlink(missing_ok=True)
-
-            print("\n" + "=" * 60)
-            print("  Complete!")
-            print("=" * 60)
-            return
-
-        # ステップ3: Google Docsアップロード
-        print("\n[Step 3/3] Uploading to Google Docs...")
-        uploader = GoogleDocsUploader()
-        doc_url = uploader.upload_markdown(markdown_text, title=args.title)
+        # ステップ3: Google Docsアップロード（オプション）
+        if args.upload_to_docs:
+            print("\n[Step 3/3] Uploading to Google Docs...")
+            uploader = GoogleDocsUploader()
+            doc_url = uploader.upload_markdown(summary_text, title=f"{args.title} - Summary")
+            print(f"\n✓ Google Docs URL: {doc_url}")
 
         # クリーンアップ
         if not args.keep_images:
             print("\nCleaning up temporary files...")
             capturer.cleanup()
-            markdown_output.unlink(missing_ok=True)
+            summary_output.unlink(missing_ok=True)
 
         print("\n" + "=" * 60)
         print("  Complete!")
         print("=" * 60)
-        print(f"\n✓ Google Docs URL: {doc_url}")
-        print(f"✓ Total pages: {len(image_paths)}")
+        print(f"\n✓ Total pages: {len(image_paths)}")
         print(f"✓ Title: {args.title}")
+        if args.save_summary:
+            print(f"✓ Summary: {args.save_summary}")
 
     except KeyboardInterrupt:
         print("\n\n⚠ Process interrupted by user")

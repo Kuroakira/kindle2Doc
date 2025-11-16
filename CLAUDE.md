@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Kindle2MD is a Python tool that automatically captures pages from the Kindle app (or similar e-reader apps), performs OCR to extract text, and uploads the result to Google Docs as Markdown. It supports both Japanese and English books, with special handling for vertical (縦書き) Japanese text.
+Kindle2Sum is a Python tool that automatically captures pages from the Kindle app (or similar e-reader apps) and generates AI-powered page summaries using Gemini Vision API directly from images. It outputs Markdown format optimized for RAG (Retrieval-Augmented Generation) applications. Supports both Japanese and English books, with special handling for vertical (縦書き) Japanese text.
 
 ## Architecture
 
@@ -14,18 +14,21 @@ The project follows a modular, pipeline-based architecture with three main stage
    - Uses PyAutoGUI for keyboard automation and screenshot capture
    - macOS-specific AppleScript integration for automatic window focus and bounds detection
    - Multi-display support via window region detection
-   - Intelligent end-of-book detection using image hashing (imagehash) and OCR-based text comparison
+   - Intelligent end-of-book detection using image hashing (imagehash) and Tesseract OCR-based text comparison
    - Page similarity detection with configurable threshold (lower = stricter)
 
-2. **OCR Stage** (`src/ocr_processor.py`):
-   - Tesseract OCR integration with language support (jpn/eng)
-   - OCR result caching to avoid redundant processing during capture
-   - Markdown conversion with optional page separators
+2. **Summarization Stage** (`src/summarizer.py`):
+   - Gemini Vision API integration for direct image-to-summary processing
+   - Reads text directly from images without separate OCR step
+   - Page-by-page summarization (200-300 characters per page)
+   - Model selection support (gemini-1.5-flash, gemini-1.5-pro, etc.)
+   - Markdown output optimized for RAG use cases
 
-3. **Upload Stage** (`src/google_docs_uploader.py`):
+3. **Upload Stage (Optional)** (`src/google_docs_uploader.py`):
    - Google Docs API integration using OAuth2
    - Token persistence via `token.json`
    - Batch text insertion for efficient document creation
+   - Uploads generated summaries to Google Docs
 
 ## Key Technical Details
 
@@ -46,9 +49,18 @@ The capture module uses a hybrid approach for detecting the final page:
 
 ### Language Support
 
-- OCR language configured via `--lang` flag (jpn/eng)
+- Gemini Vision API automatically detects and reads text from images in any language
 - Page direction affects keyboard automation: `--page-direction left` uses left arrow (縦書き), `right` uses right arrow (横書き)
-- Tesseract uses `tessdata_best` models for higher accuracy
+- Summarization prompt is currently optimized for Japanese (requests summaries in Japanese)
+- For other languages, modify the prompt in `summarizer.py`
+
+### AI Summarization (Gemini Vision)
+
+- Uses Gemini Vision API for direct image-to-summary processing (no separate OCR step)
+- Default model: `gemini-1.5-flash` (high speed, low cost, generous free tier)
+- Alternative: `gemini-1.5-pro` (higher quality, higher cost)
+- Each page is summarized to 200-300 characters based on image content
+- Markdown output format with generation method metadata
 
 ## Development Commands
 
@@ -62,20 +74,23 @@ python test_focus.py
 ### Running the Tool
 
 ```bash
-# Japanese vertical text book
-python kindle2md.py --title "本のタイトル" --page-direction left
+# Japanese vertical text book with AI summarization
+python kindle2sum.py --title "本のタイトル" --page-direction left --save-summary output.md
 
-# English book
-python kindle2md.py --title "Book Title" --lang eng
+# English book (Gemini Vision auto-detects language)
+python kindle2sum.py --title "Book Title" --save-summary output.md
 
-# Save as Markdown only (skip Google Docs upload)
-python kindle2md.py --title "Book Title" --save-markdown output.md
+# Save summary and upload to Google Docs
+python kindle2sum.py --title "Book Title" --save-summary output.md --upload-to-docs
 
 # Keep captured images for debugging
-python kindle2md.py --title "Book Title" --keep-images
+python kindle2sum.py --title "Book Title" --keep-images --save-summary output.md
 
 # Disable automatic end detection
-python kindle2md.py --title "Book Title" --disable-end-detection --max-pages 100
+python kindle2sum.py --title "Book Title" --disable-end-detection --max-pages 100 --save-summary output.md
+
+# Use high-quality Gemini model
+python kindle2sum.py --title "Book Title" --gemini-model gemini-1.5-pro --save-summary output.md
 ```
 
 ### Environment Setup
@@ -87,42 +102,57 @@ source venv/bin/activate
 
 # Install dependencies
 pip install -r requirements.txt
+
+# Set up Gemini API key
+export GEMINI_API_KEY="your-gemini-api-key-here"
 ```
 
 ## Important Constraints
 
 - **macOS Only**: Auto-focus and window detection require macOS and Accessibility permissions
-- **Tesseract Required**: Must be installed via Homebrew with language data
-- **Google API Credentials**: Requires OAuth credentials in `credentials/credentials.json` (see GOOGLE_SETUP.md)
+- **Tesseract OCR**: Required for end-of-book detection (installed via Homebrew)
+- **Google Gemini API (Required)**: Requires API key via environment variable `GEMINI_API_KEY` (see GEMINI_SETUP.md)
+- **Google Docs API (Optional)**: Requires OAuth credentials in `credentials/credentials.json` (see GOOGLE_SETUP.md)
 - **Single-threaded**: Captures pages sequentially to avoid timing issues
 - **Token Management**: `token.json` stores OAuth refresh tokens in project root (gitignored)
+- **API Costs**: Gemini API free tier (1,500 requests/day, 15M tokens/month), then $0.075 per 1M tokens (Flash) or $1.25 per 1M tokens (Pro)
 
 ## Code Modification Guidelines
 
 ### When Adding Language Support
 
-When adding support for new languages (e.g., English books):
+When adding support for new languages:
 
-1. **OCR Language**: The `--lang` parameter controls Tesseract language model selection. Ensure the corresponding tessdata file is installed (e.g., `eng.traineddata` for English).
+1. **Summarization Prompts**: The summarization prompt in `summarizer.py` is currently optimized for Japanese (requests summaries in Japanese).
+   - For other languages, modify the prompt in `summarize_page_from_image()` method to request summaries in the target language
 
 2. **Text Direction**: Most languages use `--page-direction right` (left-to-right, top-to-bottom). Only Japanese vertical text requires `--page-direction left`.
 
 3. **End Detection Tuning**: Different languages may require different `similarity_threshold` values:
    - Latin scripts (English, etc.): May need higher threshold (3-4) due to consistent character shapes
    - CJK scripts (Japanese, Chinese): Default threshold (2) usually works well
-   - Test with `--disable-end-detection` first to validate OCR quality
+   - Test with `--disable-end-detection` first to validate detection accuracy
 
-4. **OCR Processing**: No code changes needed for language support - Tesseract handles language models via the `lang` parameter in `pytesseract.image_to_string()`.
+4. **Gemini Vision**: No code changes needed for basic language support - Gemini Vision automatically detects and reads text from images in any language.
 
 ### When Modifying Capture Logic
 
 - The `delay` parameter controls timing between page turn and screenshot - adjust for slower devices
-- OCR results are cached in `ocr_texts` dict during capture for end detection
+- Tesseract OCR results are cached in `ocr_texts` dict during capture for end-of-book detection
 - Image similarity uses `imagehash.phash()` with hamming distance comparison
 - Text similarity uses `difflib.SequenceMatcher` with configurable threshold
+
+### When Modifying Summarization
+
+- Prompt engineering in `summarizer.py` affects summary quality, length, and output language
+- Model selection impacts cost and quality: `gemini-1.5-flash` (fast/cheap) vs `gemini-1.5-pro` (slow/expensive)
+- Summary length is configurable in the prompt (currently 200-300 characters)
+- The method `summarize_page_from_image()` takes image paths directly and uses Gemini Vision multimodal capabilities
+- Markdown output format is generated in `create_summary_markdown()` method
 
 ### When Modifying Google Docs Integration
 
 - Document creation and text insertion use separate API calls
 - Text is inserted in batches for efficiency (see `insert_text_to_document`)
 - OAuth scopes are minimal: `documents` and `drive.file` only
+- Google Docs upload is now optional via `--upload-to-docs` flag
