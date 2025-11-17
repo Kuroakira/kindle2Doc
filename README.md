@@ -147,7 +147,7 @@ python kindle2sum.py --title "マイブック" --app-name "Kobo" --save-summary 
 python kindle2sum.py --title "決定力" --page-direction left --save-summary output.md
 
 # 使用するGeminiモデルを変更
-python kindle2sum.py --title "マイブック" --gemini-model gemini-1.5-pro --save-summary output.md
+python kindle2sum.py --title "マイブック" --gemini-model gemini-2.5-pro --save-summary output.md
 
 # 3ページだけテスト実行
 python kindle2sum.py --title "テスト" --max-pages 3 --save-summary test.md
@@ -167,7 +167,7 @@ python kindle2sum.py --title "テスト" --max-pages 3 --save-summary test.md
 | `--keep-images` | キャプチャ画像を保持 | `False` |
 | `--no-auto-focus` | 自動フォーカスを無効化 | `False` |
 | `--app-name` | キャプチャするアプリ名 | `Kindle` |
-| `--gemini-model` | 使用するGeminiモデル | `gemini-1.5-flash` |
+| `--gemini-model` | 使用するGeminiモデル | `gemini-2.5-flash` |
 | `--similarity-threshold` | 最終ページ検出閾値（0-10） | `2` |
 | `--disable-end-detection` | 最終ページ自動検出を無効化 | `False` |
 
@@ -266,8 +266,9 @@ echo $GEMINI_API_KEY
 
 ### 要約の品質を上げたい
 
-- `--gemini-model gemini-1.5-pro` でより高品質なモデルを使用
-- ただし、コストが高く、無料枠が少ないので注意
+- `--gemini-model gemini-2.5-pro` でより高品質なモデルを使用（複雑な推論タスク向け）
+- `--gemini-model gemini-2.5-flash-lite` で高速・低コストモデルを使用
+- ただし、Proモデルはコストが高いので注意
 
 ### キャプチャが止まらない
 

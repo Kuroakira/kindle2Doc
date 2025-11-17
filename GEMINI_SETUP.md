@@ -85,15 +85,15 @@ Google Gemini APIには無料枠があります：
 
 詳細は[公式料金ページ](https://ai.google.dev/pricing)を参照してください。
 
-**推奨モデル**: Gemini 1.5 Flash（無料枠が広く、要約には十分な品質）
+**推奨モデル**: Gemini 2.5 Flash（バランスの取れた機能、価格とパフォーマンスの最適化）
 
 ## モデル選択
 
 kindle2sumでは以下のモデルを選択できます：
 
-- `gemini-1.5-flash` - 高速・低コスト（デフォルト・推奨）
-- `gemini-1.5-pro` - 高品質・高コスト
-- `gemini-2.0-flash-exp` - 最新実験版（無料）
+- `gemini-2.5-flash` - バランス型・推奨（デフォルト）
+- `gemini-2.5-pro` - 高品質・複雑な推論タスク向け
+- `gemini-2.5-flash-lite` - 高速・低コスト・高スループット
 
 ## トラブルシューティング
 

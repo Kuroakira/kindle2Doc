@@ -21,7 +21,7 @@ The project follows a modular, pipeline-based architecture with three main stage
    - Gemini Vision API integration for direct image-to-summary processing
    - Reads text directly from images without separate OCR step
    - Page-by-page summarization (200-300 characters per page)
-   - Model selection support (gemini-1.5-flash, gemini-1.5-pro, etc.)
+   - Model selection support (gemini-2.5-flash, gemini-2.5-pro, gemini-2.5-flash-lite)
    - Markdown output optimized for RAG use cases
 
 3. **Upload Stage (Optional)** (`src/google_docs_uploader.py`):
@@ -57,8 +57,8 @@ The capture module uses a hybrid approach for detecting the final page:
 ### AI Summarization (Gemini Vision)
 
 - Uses Gemini Vision API for direct image-to-summary processing (no separate OCR step)
-- Default model: `gemini-1.5-flash` (high speed, low cost, generous free tier)
-- Alternative: `gemini-1.5-pro` (higher quality, higher cost)
+- Default model: `gemini-2.5-flash` (balanced performance and cost)
+- Alternatives: `gemini-2.5-pro` (complex reasoning), `gemini-2.5-flash-lite` (high-speed/low-cost)
 - Each page is summarized to 200-300 characters based on image content
 - Markdown output format with generation method metadata
 
@@ -90,7 +90,7 @@ python kindle2sum.py --title "Book Title" --keep-images --save-summary output.md
 python kindle2sum.py --title "Book Title" --disable-end-detection --max-pages 100 --save-summary output.md
 
 # Use high-quality Gemini model
-python kindle2sum.py --title "Book Title" --gemini-model gemini-1.5-pro --save-summary output.md
+python kindle2sum.py --title "Book Title" --gemini-model gemini-2.5-pro --save-summary output.md
 ```
 
 ### Environment Setup
@@ -145,7 +145,7 @@ When adding support for new languages:
 ### When Modifying Summarization
 
 - Prompt engineering in `summarizer.py` affects summary quality, length, and output language
-- Model selection impacts cost and quality: `gemini-1.5-flash` (fast/cheap) vs `gemini-1.5-pro` (slow/expensive)
+- Model selection impacts cost and quality: `gemini-2.5-flash` (balanced), `gemini-2.5-pro` (complex reasoning), `gemini-2.5-flash-lite` (high-speed)
 - Summary length is configurable in the prompt (currently 200-300 characters)
 - The method `summarize_page_from_image()` takes image paths directly and uses Gemini Vision multimodal capabilities
 - Markdown output format is generated in `create_summary_markdown()` method

@@ -11,7 +11,7 @@ import os
 class Summarizer:
     """画像から直接要約を生成するクラス（Gemini Vision）"""
 
-    def __init__(self, model_name: str = "gemini-1.5-flash", api_key: Optional[str] = None):
+    def __init__(self, model_name: str = "gemini-2.5-flash", api_key: Optional[str] = None):
         """
         Args:
             model_name: 使用するGeminiモデル名

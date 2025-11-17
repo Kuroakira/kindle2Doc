@@ -99,8 +99,8 @@ def main():
     parser.add_argument(
         '--gemini-model',
         type=str,
-        default='gemini-1.5-flash',
-        help='使用するGeminiモデル（デフォルト: gemini-1.5-flash）'
+        default='gemini-2.5-flash',
+        help='使用するGeminiモデル（デフォルト: gemini-2.5-flash）'
     )
 
     args = parser.parse_args()
