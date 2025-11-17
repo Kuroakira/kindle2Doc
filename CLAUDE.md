@@ -20,7 +20,8 @@ The project follows a modular, pipeline-based architecture with three main stage
 2. **Summarization Stage** (`src/summarizer.py`):
    - Gemini Vision API integration for direct image-to-summary processing
    - Reads text directly from images without separate OCR step
-   - Page-by-page summarization (200-300 characters per page)
+   - Page-by-page summarization in bullet-point format (3-5 key points per page)
+   - Excludes incomplete content from page breaks for RAG quality
    - Model selection support (gemini-2.5-flash, gemini-2.5-pro, gemini-2.5-flash-lite)
    - Markdown output optimized for RAG use cases
 
@@ -59,7 +60,8 @@ The capture module uses a hybrid approach for detecting the final page:
 - Uses Gemini Vision API for direct image-to-summary processing (no separate OCR step)
 - Default model: `gemini-2.5-flash` (balanced performance and cost)
 - Alternatives: `gemini-2.5-pro` (complex reasoning), `gemini-2.5-flash-lite` (high-speed/low-cost)
-- Each page is summarized to 200-300 characters based on image content
+- Each page is summarized in bullet-point format (3-5 key points, 50-100 chars each)
+- Automatically excludes incomplete content from page breaks for higher RAG quality
 - Markdown output format with generation method metadata
 
 ## Development Commands
@@ -117,6 +119,37 @@ export GEMINI_API_KEY="your-gemini-api-key-here"
 - **Token Management**: `token.json` stores OAuth refresh tokens in project root (gitignored)
 - **API Costs**: Gemini API free tier (1,500 requests/day, 15M tokens/month), then $0.075 per 1M tokens (Flash) or $1.25 per 1M tokens (Pro)
 
+## RAG Optimization
+
+The summary format is specifically optimized for Retrieval-Augmented Generation (RAG) systems:
+
+### Bullet-Point Format
+- **3-5 key points per page**: Each bullet point is an independent semantic unit
+- **50-100 chars per point**: Concise, focused information units
+- **Complete content only**: Excludes sentences that are cut off at page boundaries
+- **Better search precision**: Individual points are more precise for vector similarity search than paragraphs
+
+### Metadata Handling
+- **HTML comment format**: Page numbers use `<!-- Page: X -->` format
+- **Machine-removable**: Easy to strip with regex `<!--.*?-->` before vector embedding
+- **Human-readable**: Still visible in raw Markdown for debugging/reference
+- **Image paths**: Also stored as HTML comments when `--keep-images` is used
+
+### RAG Processing Example
+```python
+import re
+
+# Remove all metadata (page numbers, image paths) before vector embedding
+def clean_for_rag(markdown_content: str) -> str:
+    # Remove HTML comments
+    content = re.sub(r'<!--.*?-->', '', markdown_content, flags=re.DOTALL)
+    # Remove separators
+    content = re.sub(r'\n---\n', '\n', content)
+    # Extract only bullet points
+    lines = [line.strip() for line in content.split('\n') if line.strip().startswith('-')]
+    return '\n'.join(lines)
+```
+
 ## Code Modification Guidelines
 
 ### When Adding Language Support
@@ -144,11 +177,12 @@ When adding support for new languages:
 
 ### When Modifying Summarization
 
-- Prompt engineering in `summarizer.py` affects summary quality, length, and output language
+- Prompt engineering in `summarizer.py` affects summary quality, format, and output language
+- Current format: bullet-point with 3-5 items (50-100 chars each), excludes incomplete content from page breaks
 - Model selection impacts cost and quality: `gemini-2.5-flash` (balanced), `gemini-2.5-pro` (complex reasoning), `gemini-2.5-flash-lite` (high-speed)
-- Summary length is configurable in the prompt (currently 200-300 characters)
 - The method `summarize_page_from_image()` takes image paths directly and uses Gemini Vision multimodal capabilities
 - Markdown output format is generated in `create_summary_markdown()` method
+- For RAG optimization, the prompt instructs to extract only complete information within each page
 
 ### When Modifying Google Docs Integration
 

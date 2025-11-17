@@ -46,15 +46,26 @@ class Summarizer:
             # 画像を読み込み
             image = Image.open(image_path)
 
-            prompt = f"""この画像は本のページ{page_number}です。画像内のテキストを読み取り、内容を簡潔に要約してください。
+            prompt = f"""この画像は本のページ{page_number}です。画像内のテキストを読み取り、内容を箇条書きで要約してください。
 
 要約の要件：
-- 200-300文字程度で簡潔に
+- 3-5個の箇条書き形式（各項目は独立した意味単位）
+- ページ内で完結している内容のみを抽出
+- 文章が途中で切れている部分は除外する
 - 重要なポイントのみを抽出
-- 箇条書きではなく、読みやすい文章で
+- 各項目は簡潔に（1項目あたり50-100文字程度）
 - 日本語で要約
+- RAG（検索）用途に最適化された形式
 
-画像内のテキストを読み取って要約してください。"""
+出力形式：
+- 項目1の内容
+- 項目2の内容
+- 項目3の内容
+
+重要：
+- 箇条書きの内容のみを出力してください
+- 「このページのテキストを要約します」「以下のように要約できます」などの前置き文は不要です
+- 箇条書き（- で始まる行）だけを出力してください"""
 
             response = self.model.generate_content([prompt, image])
             return response.text.strip()
@@ -115,15 +126,16 @@ class Summarizer:
         markdown_lines.append(f"# {title}\n")
         markdown_lines.append(f"**総ページ数**: {len(summaries)}\n")
         markdown_lines.append("**生成方法**: Gemini Vision API（画像から直接要約）\n")
+        markdown_lines.append("**要約形式**: 箇条書き（RAG最適化）\n")
 
         # 各ページの要約
         for i, summary in enumerate(summaries, 1):
-            markdown_lines.append(f"\n---\n## ページ {i}\n")
-            markdown_lines.append(f"### 要約\n{summary}\n")
+            markdown_lines.append(f"\n---\n<!-- Page: {i} -->\n")
+            markdown_lines.append(f"{summary}\n")
 
             # 画像パスへのリンク（オプション）
             if include_image_paths and image_paths and i <= len(image_paths):
-                markdown_lines.append(f"\n**画像**: `{image_paths[i-1]}`\n")
+                markdown_lines.append(f"\n<!-- Image: {image_paths[i-1]} -->\n")
 
         return "\n".join(markdown_lines)
 
