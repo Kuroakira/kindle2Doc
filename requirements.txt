@@ -1,5 +1,6 @@
 # AI Summarization
 google-generativeai>=0.8.0
+python-dotenv>=1.0.0
 
 # Google Docs Integration (Optional)
 google-api-python-client>=2.187.0

@@ -63,8 +63,14 @@ pip install -r requirements.txt
 #### Gemini API（必須・要約生成用）
 [GEMINI_SETUP.md](GEMINI_SETUP.md) の手順に従って、API Keyを取得し設定：
 
+**方法1: 環境変数に設定（推奨）**
 ```bash
 export GEMINI_API_KEY="your-gemini-api-key"
+```
+
+**方法2: .envファイルに設定**
+```bash
+echo "GEMINI_API_KEY=your-gemini-api-key" > .env
 ```
 
 #### Google Docs API（オプション・アップロード用）
@@ -106,10 +112,11 @@ python test_focus.py
 ```bash
 source venv/bin/activate
 
-# 環境変数を設定（まだの場合）
+# 環境変数を設定（.envファイルを使わない場合）
 export GEMINI_API_KEY="your-gemini-api-key"
 
 # 横書きの本（デフォルト）
+# 注意: .envファイルを作成済みの場合は、export不要
 python kindle2sum.py --title "本のタイトル" --save-summary summary.md
 
 # 縦書きの本（日本の本の多く）

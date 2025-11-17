@@ -35,10 +35,10 @@
 
 ### 3. API Keyの設定
 
-#### 方法1: 環境変数に設定（推奨）
+#### 方法1: 環境変数に設定
 
 ```bash
-# 一時的に設定
+# 一時的に設定（セッションごと）
 export GEMINI_API_KEY="your-api-key-here"
 
 # 永続的に設定（推奨）
@@ -46,14 +46,18 @@ echo 'export GEMINI_API_KEY="your-api-key-here"' >> ~/.zshrc
 source ~/.zshrc
 ```
 
-#### 方法2: .envファイルに設定
+#### 方法2: .envファイルに設定（推奨・簡単）
 
 ```bash
 # プロジェクトルートに.envファイルを作成
-echo 'GEMINI_API_KEY=your-api-key-here' > .env
+cd /path/to/kindle2md
+echo "GEMINI_API_KEY=your-api-key-here" > .env
 ```
 
-**注意**: `.env`ファイルは`.gitignore`に含まれているため、Gitにコミットされません。
+**利点**:
+- プロジェクトごとに異なるAPI Keyを管理できる
+- 自動的に読み込まれる（`python-dotenv`使用）
+- `.gitignore`に含まれているためGitにコミットされない
 
 ### 4. 依存関係のインストール
 
@@ -64,6 +68,14 @@ pip install -r requirements.txt
 ### 5. テスト
 
 セットアップが正しく完了したか確認：
+
+```bash
+# .envファイルを使う場合は、プロジェクトルートで実行
+cd /path/to/kindle2md
+python -c "from dotenv import load_dotenv; load_dotenv(); import google.generativeai as genai; import os; genai.configure(api_key=os.environ.get('GEMINI_API_KEY')); print('✓ Gemini API configured successfully')"
+```
+
+または、環境変数を直接設定している場合：
 
 ```bash
 python -c "import google.generativeai as genai; import os; genai.configure(api_key=os.environ.get('GEMINI_API_KEY')); print('✓ Gemini API configured successfully')"

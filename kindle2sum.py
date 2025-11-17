@@ -8,6 +8,10 @@ Usage:
 import argparse
 import sys
 from pathlib import Path
+from dotenv import load_dotenv
+
+# .envファイルから環境変数を読み込み
+load_dotenv()
 
 # srcディレクトリをパスに追加
 sys.path.insert(0, str(Path(__file__).parent / "src"))
