@@ -1,320 +1,320 @@
 # Kindle2Sum
 
-Kindleアプリを自動でページめくりしながらキャプチャし、Gemini Vision APIで画像から直接ページ要約を生成するツールです。RAG（Retrieval-Augmented Generation）用のデータ作成に最適です。
+Automatically capture Kindle app pages while turning pages, and generate AI-powered page summaries directly from images using Gemini Vision API. Optimized for RAG (Retrieval-Augmented Generation) data preparation.
 
-## 機能
+## Features
 
-- ✅ Kindleアプリの自動ページキャプチャ
-- ✅ **自動フォーカス機能（macOS）** - コマンド実行後、自動でKindleアプリにフォーカス
-- ✅ **マルチディスプレイ対応** - 特定ウィンドウのみをキャプチャ
-- ✅ **縦書き・横書き対応** - 日本語縦書きの本にも対応
-- ✅ 最終ページの自動検出
-- ✅ **AI要約生成（Gemini Vision API）** - 画像から直接テキストを読み取り要約
-- ✅ Markdown形式での出力
-- ✅ **Google Docsへのアップロード（オプション）** - 要約結果をGoogle Docsに保存可能
+- ✅ Automatic Kindle app page capture
+- ✅ **Auto-focus (macOS)** - Automatically focuses Kindle app after command execution
+- ✅ **Multi-display support** - Captures specific window only
+- ✅ **Vertical/Horizontal text support** - Supports Japanese vertical writing
+- ✅ Automatic end-of-book detection
+- ✅ **AI summarization (Gemini Vision API)** - Reads and summarizes text directly from images
+- ✅ Markdown output format
+- ✅ **Google Docs upload (optional)** - Save summaries to Google Docs
 
-## 必要なもの
+## Requirements
 
-### システム要件
+### System Requirements
 
-- Python 3.9以上
-- macOS（PyAutoGUIがmacOSに対応）
-- Google Cloud アカウント
+- Python 3.9 or higher
+- macOS (PyAutoGUI supports macOS)
+- Google Cloud account
 
-### Google Cloud API認証情報
+### Google Cloud API Credentials
 
-以下のAPIを使用するため、認証情報が必要です：
+The following APIs are required:
 
-1. **Google Gemini API（必須）** - AI要約生成（画像から直接）
-   - API Key認証が必要
-   - 詳しい手順は [GEMINI_SETUP.md](GEMINI_SETUP.md) を参照
+1. **Google Gemini API (Required)** - AI summarization from images
+   - API Key authentication required
+   - See [GEMINI_SETUP.md](GEMINI_SETUP.md) for detailed setup
 
-2. **Google Docs API（オプション）** - ドキュメントアップロード
-   - OAuth認証が必要（要約をDocsにアップロードする場合のみ）
-   - 詳しい手順は [GOOGLE_SETUP.md](GOOGLE_SETUP.md) を参照
+2. **Google Docs API (Optional)** - Document upload
+   - OAuth authentication required (only if uploading to Docs)
+   - See [GOOGLE_SETUP.md](GOOGLE_SETUP.md) for detailed setup
 
-**料金について**:
-- Gemini API: 無料枠（1日あたり1,500リクエスト、月間1500万トークン）、詳細は [GEMINI_SETUP.md](GEMINI_SETUP.md)
+**Pricing**:
+- Gemini API: Free tier (1,500 requests/day, 15M tokens/month), see [GEMINI_SETUP.md](GEMINI_SETUP.md) for details
 
-## セットアップ
+## Setup
 
-### 1. リポジトリのクローン
+### 1. Clone the repository
 
 ```bash
 git clone <repository-url>
 cd kindle2md
 ```
 
-### 2. 仮想環境の作成と有効化
+### 2. Create and activate virtual environment
 
 ```bash
 python3 -m venv venv
 source venv/bin/activate
 ```
 
-### 3. 依存パッケージのインストール
+### 3. Install dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 4. Google API認証情報の設定
+### 4. Configure Google API credentials
 
-#### Gemini API（必須・要約生成用）
-[GEMINI_SETUP.md](GEMINI_SETUP.md) の手順に従って、API Keyを取得し設定：
+#### Gemini API (Required - for summarization)
+Follow [GEMINI_SETUP.md](GEMINI_SETUP.md) to obtain and configure API Key:
 
-**方法1: 環境変数に設定（推奨）**
+**Method 1: Environment variable (recommended)**
 ```bash
 export GEMINI_API_KEY="your-gemini-api-key"
 ```
 
-**方法2: .envファイルに設定**
+**Method 2: .env file**
 ```bash
 echo "GEMINI_API_KEY=your-gemini-api-key" > .env
 ```
 
-#### Google Docs API（オプション・アップロード用）
-要約をGoogle Docsにアップロードする場合のみ必要です。
-[GOOGLE_SETUP.md](GOOGLE_SETUP.md) の手順に従って、OAuth認証情報を取得し配置：
+#### Google Docs API (Optional - for upload)
+Only required if uploading summaries to Google Docs.
+Follow [GOOGLE_SETUP.md](GOOGLE_SETUP.md) to obtain and place OAuth credentials:
 
 ```bash
 mkdir -p credentials
 mv ~/Downloads/credentials.json credentials/
 ```
 
-### 5. Kindle推奨設定（精度向上のため）
+### 5. Recommended Kindle settings (for better accuracy)
 
-Kindleアプリで以下の設定を推奨します：
+Configure the following settings in Kindle app:
 
-1. **フォントサイズ**: できるだけ大きく設定
-2. **ウィンドウサイズ**: フルスクリーンまたは最大化
-3. **明るさ**: 明るめに設定
-4. **余白**: 可能であれば余白を減らす
+1. **Font size**: As large as possible
+2. **Window size**: Fullscreen or maximized
+3. **Brightness**: Bright setting
+4. **Margins**: Reduce margins if possible
 
-これらの設定により、Gemini Vision APIの認識精度が大幅に向上します。
+These settings significantly improve Gemini Vision API recognition accuracy.
 
-## 使い方
+## Usage
 
-### 事前チェック（推奨）
+### Pre-check (Recommended)
 
-自動フォーカス機能が正しく動作するか確認するには：
+To verify auto-focus functionality works correctly:
 
 ```bash
 source venv/bin/activate
 python test_focus.py
 ```
 
-### 基本的な使い方
+### Basic Usage
 
-1. Kindleアプリを開き、要約したい本の最初のページを表示
-2. ターミナルで以下のコマンドを実行
+1. Open Kindle app and display the first page of the book you want to summarize
+2. Run the following command in terminal
 
 ```bash
 source venv/bin/activate
 
-# 環境変数を設定（.envファイルを使わない場合）
+# Set environment variable (if not using .env file)
 export GEMINI_API_KEY="your-gemini-api-key"
 
-# 横書きの本（デフォルト）
-# 注意: .envファイルを作成済みの場合は、export不要
-python kindle2sum.py --title "本のタイトル" --save-summary summary.md
+# Horizontal text book (default)
+# Note: No export needed if you created .env file
+python kindle2sum.py --title "Book Title" --save-summary summary.md
 
-# 縦書きの本（日本の本の多く）
-python kindle2sum.py --title "本のタイトル" --page-direction left --save-summary summary.md
+# Vertical text book (many Japanese books)
+python kindle2sum.py --title "Book Title" --page-direction left --save-summary summary.md
 
-# 要約をGoogle Docsにもアップロード
-python kindle2sum.py --title "本のタイトル" --save-summary summary.md --upload-to-docs
+# Also upload summary to Google Docs
+python kindle2sum.py --title "Book Title" --save-summary summary.md --upload-to-docs
 ```
 
-3. **自動的にKindleアプリにフォーカスが移ります**（macOSのみ）
-4. 2秒後に自動的にキャプチャが開始されます
-5. 最終ページまで自動的にキャプチャし、Gemini Vision APIで要約を実行します
+3. **Kindle app will be automatically focused** (macOS only)
+4. Capture starts automatically after 2 seconds
+5. Automatically captures until the last page and generates summaries with Gemini Vision API
 
-**重要**: 日本語の縦書きの本は `--page-direction left` を指定してください（左矢印キーでページ送り）。
+**Important**: For Japanese vertical text books, specify `--page-direction left` (uses left arrow key for page turning).
 
-### オプション
+### Options
 
 ```bash
-# タイトルを指定
-python kindle2sum.py --title "マイブック" --save-summary output.md
+# Specify title
+python kindle2sum.py --title "My Book" --save-summary output.md
 
-# ページ送りの待機時間を変更（デフォルト: 1.5秒）
-python kindle2sum.py --title "マイブック" --delay 2.0 --save-summary output.md
+# Change page turn delay (default: 1.5 seconds)
+python kindle2sum.py --title "My Book" --delay 2.0 --save-summary output.md
 
-# キャプチャ画像を保持（デフォルトでは削除されます）
-python kindle2sum.py --title "マイブック" --keep-images --save-summary output.md
+# Keep captured images (deleted by default)
+python kindle2sum.py --title "My Book" --keep-images --save-summary output.md
 
-# 自動フォーカスを無効化（手動でフォーカスする場合）
-python kindle2sum.py --title "マイブック" --no-auto-focus --save-summary output.md
+# Disable auto-focus (for manual focusing)
+python kindle2sum.py --title "My Book" --no-auto-focus --save-summary output.md
 
-# 別のアプリをキャプチャ（例: Kobo）
-python kindle2sum.py --title "マイブック" --app-name "Kobo" --save-summary output.md
+# Capture different app (e.g., Kobo)
+python kindle2sum.py --title "My Book" --app-name "Kobo" --save-summary output.md
 
-# 縦書きの本（左矢印でページ送り）
-python kindle2sum.py --title "決定力" --page-direction left --save-summary output.md
+# Vertical text book (left arrow for page turn)
+python kindle2sum.py --title "Japanese Book" --page-direction left --save-summary output.md
 
-# 使用するGeminiモデルを変更
-python kindle2sum.py --title "マイブック" --gemini-model gemini-2.5-pro --save-summary output.md
+# Change Gemini model
+python kindle2sum.py --title "My Book" --gemini-model gemini-2.5-pro --save-summary output.md
 
-# 3ページだけテスト実行
-python kindle2sum.py --title "テスト" --max-pages 3 --save-summary test.md
+# Test run with 3 pages only
+python kindle2sum.py --title "Test" --max-pages 3 --save-summary test.md
 ```
 
-### 全オプション
+### All Options
 
-| オプション | 説明 | デフォルト |
-|-----------|------|-----------|
-| `--title` | ドキュメントのタイトル | `Kindle Book` |
-| `--output-dir` | キャプチャ画像の保存先 | `output` |
-| `--delay` | ページ送り後の待機時間（秒） | `1.5` |
-| `--max-pages` | 最大ページ数 | `1000` |
-| `--page-direction` | ページ送りの方向（`left`=縦書き, `right`=横書き） | `right` |
-| `--save-summary` | 要約Markdownファイルパス指定 | なし（必須） |
-| `--upload-to-docs` | Google Docsにもアップロード | `False` |
-| `--keep-images` | キャプチャ画像を保持 | `False` |
-| `--no-auto-focus` | 自動フォーカスを無効化 | `False` |
-| `--app-name` | キャプチャするアプリ名 | `Kindle` |
-| `--gemini-model` | 使用するGeminiモデル | `gemini-2.5-flash` |
-| `--similarity-threshold` | 最終ページ検出閾値（0-10） | `2` |
-| `--disable-end-detection` | 最終ページ自動検出を無効化 | `False` |
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--title` | Document title | `Kindle Book` |
+| `--output-dir` | Capture image directory | `output` |
+| `--delay` | Delay after page turn (seconds) | `1.5` |
+| `--max-pages` | Maximum number of pages | `1000` |
+| `--page-direction` | Page turn direction (`left`=vertical, `right`=horizontal) | `right` |
+| `--save-summary` | Summary Markdown file path | None (required) |
+| `--upload-to-docs` | Also upload to Google Docs | `False` |
+| `--keep-images` | Keep captured images | `False` |
+| `--no-auto-focus` | Disable auto-focus | `False` |
+| `--app-name` | App name to capture | `Kindle` |
+| `--gemini-model` | Gemini model to use | `gemini-2.5-flash` |
+| `--similarity-threshold` | End detection threshold (0-10) | `2` |
+| `--disable-end-detection` | Disable automatic end detection | `False` |
 
-## 出力形式
+## Output Format
 
-生成される要約Markdownファイルの形式：
+Generated summary Markdown file format:
 
 ```markdown
-# 本のタイトル
-**総ページ数**: 100
-**生成方法**: Gemini Vision API（画像から直接要約）
-**要約形式**: 箇条書き（RAG最適化）
+# Book Title
+**Total pages**: 100
+**Generation method**: Gemini Vision API (direct image summarization)
+**Summary format**: Bullet points (RAG optimized)
 
 ---
 <!-- Page: 1 -->
 
-- 著者が営業インターン時代に商品が売れず苦労した経験について
-- PMF（プロダクトマーケットフィット）の概念を当時知っていれば無駄な努力をせずに済んだという気づき
-- 現在の成功体験から、PMFの重要性を広めたいという執筆動機
-- 新規事業に携わる人々が正しい方向に努力できるようサポートする目的
+- Author's experience struggling to sell products during sales internship
+- Realization that knowing about PMF (Product-Market Fit) concept would have saved wasted effort
+- Motivation to spread awareness of PMF importance based on current success
+- Goal to support people in new ventures to direct their efforts correctly
 
 ---
 <!-- Page: 2 -->
 
-- PMFの基本定義と重要性について
-- 市場とプロダクトの適合を見極める方法
-- PMF達成前後でのビジネスの違い
+- Basic definition and importance of PMF
+- Methods to identify market-product fit
+- Differences in business before and after achieving PMF
 
 ...
 ```
 
-### RAG（検索拡張生成）用のメタデータ除外
+### Removing Metadata for RAG (Retrieval-Augmented Generation)
 
-要約をベクトル埋め込みやRAGシステムで利用する際、ページ番号などのメタデータを除外したい場合は、正規表現で簡単に除去できます：
+When using summaries for vector embeddings or RAG systems, you can easily remove metadata like page numbers using regular expressions:
 
 ```python
 import re
 
-# Markdownファイルを読み込み
+# Load Markdown file
 with open('summary.md', 'r', encoding='utf-8') as f:
     content = f.read()
 
-# HTMLコメントを除去（ページ番号や画像パス）
+# Remove HTML comments (page numbers, image paths)
 content_without_metadata = re.sub(r'<!--.*?-->', '', content, flags=re.DOTALL)
 
-# 区切り線も除去したい場合
+# Also remove separators if desired
 content_clean = re.sub(r'\n---\n', '\n', content_without_metadata)
 ```
 
-## プロジェクト構成
+## Project Structure
 
 ```
 kindle2md/
-├── kindle2sum.py          # メインスクリプト
+├── kindle2sum.py          # Main script
 ├── src/
-│   ├── kindle_capture.py  # Kindleキャプチャモジュール
-│   ├── summarizer.py      # AI要約生成モジュール（Gemini Vision API使用）
-│   └── google_docs_uploader.py  # Google Docsアップロードモジュール
-├── credentials/           # Google API認証情報（.gitignore）
-│   └── credentials.json   # Google Docs API認証情報（オプション）
-├── output/                # 一時ファイル（.gitignore）
-├── requirements.txt       # 依存パッケージ
-├── GEMINI_SETUP.md       # Google Gemini API設定ガイド
-├── GOOGLE_SETUP.md       # Google Docs API設定ガイド（オプション）
-└── README.md             # このファイル
+│   ├── kindle_capture.py  # Kindle capture module
+│   ├── summarizer.py      # AI summarization module (Gemini Vision API)
+│   └── google_docs_uploader.py  # Google Docs upload module
+├── credentials/           # Google API credentials (.gitignore)
+│   └── credentials.json   # Google Docs API credentials (optional)
+├── output/                # Temporary files (.gitignore)
+├── requirements.txt       # Dependencies
+├── GEMINI_SETUP.md       # Google Gemini API setup guide
+├── GOOGLE_SETUP.md       # Google Docs API setup guide (optional)
+└── README.md             # This file
 ```
 
-## トラブルシューティング
+## Troubleshooting
 
-### 自動フォーカスが動作しない
+### Auto-focus not working
 
-**macOSの場合：**
-システム環境設定でアクセシビリティの許可が必要な場合があります。
+**For macOS:**
+Accessibility permission may be required in System Preferences.
 
-1. システム環境設定 > セキュリティとプライバシー > プライバシー > アクセシビリティ
-2. ターミナルまたはiTerm2にチェックを入れる
+1. System Preferences > Security & Privacy > Privacy > Accessibility
+2. Check Terminal or iTerm2
 
-**回避策：**
-`--no-auto-focus` オプションを使用して手動でフォーカスします：
+**Workaround:**
+Use `--no-auto-focus` option for manual focusing:
 
 ```bash
-python kindle2sum.py --title "本のタイトル" --no-auto-focus --save-summary output.md
+python kindle2sum.py --title "Book Title" --no-auto-focus --save-summary output.md
 ```
 
-### マルチディスプレイで全画面がキャプチャされる
+### Full screen captured on multi-display
 
-自動フォーカスが有効な場合、Kindleウィンドウのみがキャプチャされます。
-もし全画面がキャプチャされている場合は、Kindleアプリが正しく認識されていない可能性があります。
+When auto-focus is enabled, only the Kindle window should be captured.
+If full screen is captured, the Kindle app may not be recognized correctly.
 
-**解決方法：**
-- Kindleアプリが起動しているか確認
-- `--app-name` オプションで正確なアプリ名を指定
+**Solution:**
+- Verify Kindle app is running
+- Specify exact app name with `--app-name` option
 
-### Gemini API認証エラー
+### Gemini API authentication error
 
 ```
 API key not configured
 ```
 
-環境変数 `GEMINI_API_KEY` が設定されているか確認してください：
+Verify that `GEMINI_API_KEY` environment variable is set:
 
 ```bash
 echo $GEMINI_API_KEY
-# API Keyが表示されるはず
+# Should display your API Key
 ```
 
-詳しくは [GEMINI_SETUP.md](GEMINI_SETUP.md) を参照。
+See [GEMINI_SETUP.md](GEMINI_SETUP.md) for details.
 
-### Google Docs API認証エラー
+### Google Docs API authentication error
 
-`credentials/credentials.json` が正しく配置されているか確認してください。詳しくは [GOOGLE_SETUP.md](GOOGLE_SETUP.md) を参照。
+Verify that `credentials/credentials.json` is correctly placed. See [GOOGLE_SETUP.md](GOOGLE_SETUP.md) for details.
 
-### 要約の精度が低い
+### Low summary accuracy
 
-- `--delay` オプションでページ送りの待機時間を長くしてみてください（画像のブレを防ぐ）
-- Kindleアプリの表示サイズを大きくすると認識精度が向上する場合があります
-- フォントサイズを大きくすると、Gemini Vision APIの認識精度が向上します
+- Try increasing page turn delay with `--delay` option (prevents image blur)
+- Increasing Kindle app display size may improve recognition accuracy
+- Increasing font size improves Gemini Vision API recognition accuracy
 
-### 要約の品質を上げたい
+### Improve summary quality
 
-- `--gemini-model gemini-2.5-pro` でより高品質なモデルを使用（複雑な推論タスク向け）
-- `--gemini-model gemini-2.5-flash-lite` で高速・低コストモデルを使用
-- ただし、Proモデルはコストが高いので注意
+- Use `--gemini-model gemini-2.5-pro` for higher quality (complex reasoning tasks)
+- Use `--gemini-model gemini-2.5-flash-lite` for faster/lower cost
+- Note: Pro model is more expensive
 
-### キャプチャが止まらない
+### Capture won't stop
 
-最終ページの検出に失敗している可能性があります。`Ctrl+C` で中断してください。
+End detection may have failed. Interrupt with `Ctrl+C`.
 
-## 注意事項
+## Important Notes
 
-- このツールは個人的な使用を想定しています
-- 著作権法を遵守して使用してください
-- **キャプチャ中はマウスやキーボードを操作しないでください**
-- macOS以外のOSでは自動フォーカス機能は使用できません
-- API使用量に注意してください（無料枠を超えると課金されます）
+- This tool is intended for personal use
+- Please comply with copyright laws
+- **Do not operate mouse or keyboard during capture**
+- Auto-focus feature unavailable on non-macOS systems
+- Monitor API usage (charges apply when exceeding free tier)
 
-## ライセンス
+## License
 
 MIT License
 
-## 貢献
+## Contributing
 
-バグ報告や機能要望はIssueでお願いします。
+Bug reports and feature requests welcome via Issues.
